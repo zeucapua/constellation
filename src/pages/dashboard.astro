@@ -1,0 +1,12 @@
+---
+import SiteLayout from "../layouts/SiteLayout.astro";
+const user = Astro.locals.user;
+
+if (!user) {
+  return Astro.redirect("/");
+}
+---
+
+<SiteLayout title="Dashboard - Constellation: Organized GitHub Starred Repositories">
+  <h1>Hello, {user.username}!</h1>
+</SiteLayout>
