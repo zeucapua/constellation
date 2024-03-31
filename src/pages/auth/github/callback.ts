@@ -5,7 +5,7 @@ import type { APIContext } from "astro";
 import { User, db, eq } from "astro:db";
 
 interface GitHubUser {
-  id: string;
+  id: number;
   login: string;
 }
 
@@ -25,7 +25,7 @@ export async function GET(context: APIContext) : Promise<Response> {
       headers: { Authorization: `Bearer ${tokens.accessToken}` }
     });
     const github_user : GitHubUser = await response.json();
-    const [existing_user] = await db.select().from(User).where(eq(User.github_id, Number(github_user.id)));
+    const [existing_user] = await db.select().from(User).where(eq(User.github_id, github_user.id));
     if (existing_user) {
       const session = await lucia.createSession(existing_user.id, {});
       const session_cookie = lucia.createSessionCookie(session.id);
@@ -36,11 +36,11 @@ export async function GET(context: APIContext) : Promise<Response> {
     const user_id = generateId(15);
     const [user] = await db.insert(User).values({
       id: user_id,
-      github_id: Number(github_user.id),
+      github_id: github_user.id,
       username: github_user.login
     }).returning();
 
-    const session = await lucia.createSession(user_id, {});
+    const session = await lucia.createSession(user.id, {});
     const session_cookie = lucia.createSessionCookie(session.id);
     context.cookies.set(session_cookie.name, session_cookie.value, session_cookie.attributes);
 
@@ -51,6 +51,7 @@ export async function GET(context: APIContext) : Promise<Response> {
       return new Response(null, { status: 400 });
     }
 
+    console.log((e as Error).message);
     return new Response(null, { status: 500 });
   }
 }
