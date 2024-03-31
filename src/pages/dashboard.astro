@@ -1,12 +1,47 @@
 ---
+import { db, eq, Star } from "astro:db";
+import { Icon } from "astro-icon/components";
 import SiteLayout from "../layouts/SiteLayout.astro";
 const user = Astro.locals.user;
+
+interface GitHubStar {
+  id: number;
+  name: string;
+  description: string;
+  owner: {
+    login: string;
+    avatar_url: string;
+  },
+  html_url: string;
+}
 
 if (!user) {
   return Astro.redirect("/");
 }
+
+const response = await fetch(user.starred_url);
+const github_stars : GitHubStar[] = await response.json();
+const user_stars = await db.select().from(Star).where(eq(Star.user_id, user.id));
 ---
 
 <SiteLayout title="Dashboard - Constellation: Organized GitHub Starred Repositories">
   <h1>Hello, {user.username}!</h1>
+  <ul class="grid grid-cols-1 lg:grid-cols-3 gap-8 p-8">
+  { github_stars.map((star : GitHubStar) => (
+    <li class="flex flex-col justify-between gap-4 px-8 py-4 border border-white rounded-xl">
+      <a href={star.html_url} target="_blank" class="flex items-center gap-8 w-fit"> 
+        <img src={star.owner.avatar_url} alt={star.name} class="w-16 h-16 rounded-xl bg-white/20 p-1" />
+        <h1 class="text-xl font-bold">{star.name} <span class="text-xs">/{star.owner.login}</span></h1>
+      </a>
+      <h2>{star.description || "No description"}</h2>
+      <section class="flex gap-8">
+        <button
+          hx-post="/partials/add-star"
+        >
+          <Icon name="solar:star-fall-line-duotone" class="w-8 h-8" />
+        </button>
+      </section>
+    </li>
+  ))}
+  </ul>
 </SiteLayout>

@@ -7,6 +7,7 @@ import { User, db, eq } from "astro:db";
 interface GitHubUser {
   id: number;
   login: string;
+  starred_url: string;
 }
 
 export async function GET(context: APIContext) : Promise<Response> {
@@ -34,10 +35,14 @@ export async function GET(context: APIContext) : Promise<Response> {
     }
 
     const user_id = generateId(15);
+    // removes '{/owner}{/repo}' from starred_url
+    const starred_url = github_user.starred_url.substring(0,github_user.starred_url.length - 15);
+
     const [user] = await db.insert(User).values({
       id: user_id,
       github_id: github_user.id,
-      username: github_user.login
+      username: github_user.login,
+      starred_url,
     }).returning();
 
     const session = await lucia.createSession(user.id, {});
